@@ -5,10 +5,9 @@
 #define USE_KAHAN 1
 
 #include <GL/glut.h>
-
+#include <unistd.h>
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
 
 #include <random>
 
@@ -80,7 +79,7 @@ class vec3
 public:
 	real x, y, z;
 
-	inline vec3<real>() { }
+	inline vec3<real>() {x=0;y=0;z=0; }
 	inline vec3<real>(const vec3<real> & v) : x(v.x), y(v.y), z(v.z) { }
 	inline vec3<real>(real v) : x(v), y(v), z(v) { }
 	inline vec3<real>(real x_, real y_, real z_) : x(x_), y(y_), z(z_) { }
@@ -113,6 +112,7 @@ typedef vec3<double> vec3d;
 
 typedef vec3<float> vec3f; // Used for path storage and simple stuff that doesn't need tons of precision
 
+struct timespec ts;
 
 class nbody
 {
@@ -197,7 +197,7 @@ public:
 		for (int i = 0; i < num_particles; ++i)
 		{
 			const vec3d & p_i = p_tmp[i];
-			vec3d F_i = 0;
+			vec3d F_i ;
 			for (int j = 0; j < num_particles; ++j)
 			{
 				if (j == i) continue;
@@ -223,7 +223,7 @@ public:
 		{
 			if ((sub_steps % 1024) == 0)
 			{
-				if (reset) { init(GetTickCount() - start_time); reset = false; }
+				if (reset) { init(clock_gettime(CLOCK_MONOTONIC,&ts) - start_time); reset = false; }
 				else if (quit) { return; }
 			}
 
@@ -233,7 +233,7 @@ public:
 			for (int i = 0; i < num_particles; ++i)
 			{
 				const vec3d p_i = pos[i];
-				vec3d F_i = 0;
+				vec3d F_i;
 				for (int j = 0; j < num_particles; ++j)
 				{
 					if (j == i) continue;
@@ -298,7 +298,7 @@ public:
 				for (int i = 0; i < num_particles; ++i)
 				{
 					const vec3d p_i = pos[i];
-					vec3d F_i = 0;
+					vec3d F_i;
 					for (int j = 0; j < num_particles; ++j)
 					{
 						if (j == i) continue;
@@ -362,9 +362,9 @@ std::vector<uint32_t> obj_tris;
 
 void renderScene()
 {
-	Sleep(16); // Max 62.50fps to avoid spinning on the lock too hard
+	usleep(16); // Max 62.50fps to avoid spinning on the lock too hard
 
-	const double t0 = GetTickCount() - start_time;
+	const double t0 = clock_gettime(CLOCK_MONOTONIC,&ts) - start_time;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -494,7 +494,7 @@ int main(int argc, char ** argv)
 	lookat_path_idx = 0;
 
 
-	start_time = GetTickCount();
+	start_time = clock_gettime(CLOCK_MONOTONIC,&ts);
 
 	compute_thread = std::thread(ComputeThread);
 
