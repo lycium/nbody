@@ -5,7 +5,8 @@ Tiny experimental high precision n-body simulation for small n.
 
 * Uses RK4 integration with variable time step, determined in the first acceleration computation step.
 
-* Optionally uses the KahanAdder class from OpenSAGE, available at http://opensage.googlecode.com/svn/core_code/trunk/src/c++/include/numerics/kahan.h
+* Optionally uses the KahanAdder class from OpenSAGE, available at http://opensage.googlecode.com/svn/core_code/trunk/src/c++/include/numerics/kahan.h.
+
   Kahan summation ought to greatly reduce the amount of roundoff error introduced by the many small time steps taken in close encounters,   besides the overall long term numerical drift due to the chaotic system.
 
 * Orbit computation is done in a separate thread to allow smooth display while computing. Orbit data is protected with a mutex.
