@@ -15,7 +15,7 @@ Tiny experimental high precision n-body simulation for small n.
 
 ## Planned additions
 
-* Free camera, a la WASD + mouse.
+* Free camera, à la WASD + mouse.
 
 * Arbitrary precision arithmetic, so paths can be "verified" by increasing the number of bits used and checking how long until the paths diverge.
 
