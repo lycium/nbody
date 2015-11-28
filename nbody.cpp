@@ -2,6 +2,8 @@
 // thomas ludwig 2015
 // thomas.ludwig@gmail.com
 
+#define USE_KAHAN 1
+
 #include <GL/glut.h>
 
 #define NOMINMAX
@@ -23,7 +25,9 @@
 
 #include <vector>
 
+#if USE_KAHAN
 #include "kahan.h"
+#endif
 
 volatile bool quit = false;
 volatile bool reset = false;
@@ -101,8 +105,11 @@ template<typename real>
 inline static double dot(const vec3<real> & lhs, const vec3<real> & rhs) { return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z; }
 
 
-//typedef vec3<KahanAdder<double> > vec3d; // Define vec3d using Kahan adders to minimise truncation error
+#if USE_KAHAN
+typedef vec3<KahanAdder<double> > vec3d; // Use Kahan summation to minimise roundoff error
+#else
 typedef vec3<double> vec3d;
+#endif
 
 typedef vec3<float> vec3f; // Used for path storage and simple stuff that doesn't need tons of precision
 
@@ -135,7 +142,7 @@ public:
 				if (p.length2() > 1) continue;
 
 				bool far_enough = true;
-				const float t_min = 0.71f;
+				const float t_min = 0.96f;
 				const float t_min2 = t_min * t_min;
 				for (int i = 0; i < z; ++i) if ((p - init_points[i]).length2() < t_min2) { far_enough = false; break; }
 				if (!far_enough) continue;
@@ -246,7 +253,7 @@ public:
 
 			// Compute the time step depending on the maximum force
 			const double min_step = 1e-11;
-			const double step_scale = 32.0 * 64 * 16;
+			const double step_scale = 32.0 * 64 * 4;
 			double step_scaled = std::min(t_step, std::max(min_step, t_step / max_force * step_scale));
 			if (t_sum + step_scaled > t_step)
 				step_scaled = t_step - t_sum;
@@ -285,7 +292,7 @@ public:
 		{
 			std::cout << "step " << num_steps << " took 10 ^ " << std::log10(sub_steps) << " substeps!" << std::endl;
 
-			if (false)
+			//if (false)
 			{
 				std::pair<double, int> force_particle_pairs[num_particles];
 				for (int i = 0; i < num_particles; ++i)
@@ -313,7 +320,7 @@ public:
 		++num_steps;
 	}
 
-	const static int num_particles = 17;
+	const static int num_particles = 9;
 
 	std::vector<vec3f> particle_paths[num_particles];
 
@@ -345,7 +352,7 @@ void ComputeThread() { while (!quit) { grav.step(); } }
 std::vector<vec3f> path_point_pos; // Buffer for passing the moving path points to OpenGL in one call
 
 
-inline static uint32_t hash_func(uint32_t x) { x = (x ^ 12345391) * 2654435769; x ^= (x << 6) ^ (x >> 26); x *= 2654435769; x += (x << 5) ^ (x >> 12); return x; }
+inline static uint32_t wang_hash(uint32_t x) { x = (x ^ 12345391) * 2654435769; x ^= (x << 6) ^ (x >> 26); x *= 2654435769; x += (x << 5) ^ (x >> 12); return x; }
 
 vec3f cam_lookat;
 int lookat_path_idx;
@@ -364,7 +371,7 @@ void renderScene()
 	{
 		std::lock_guard<std::mutex> lock(grav.mutex);
 
-		const double display_interval = 128 * 16;
+		const double display_interval = 128 * 64;
 		const double t_wrap = std::fmod(t0 * 0.25, display_interval);
 		const int num_path_points = grav.particle_paths[0].size();
 		const int num_display_pts = (int)(num_path_points / display_interval);
@@ -386,9 +393,9 @@ void renderScene()
 
 		for (int i = 0; i < nbody::num_particles; ++i)
 		{
-			const float path_r = hash_func(i * 3 + 0) / 4294967296.0f;
-			const float path_g = hash_func(i * 3 + 1) / 4294967296.0f;
-			const float path_b = hash_func(i * 3 + 2) / 4294967296.0f;
+			const float path_r = wang_hash(i * 3 + 0) / 4294967296.0f;
+			const float path_g = wang_hash(i * 3 + 1) / 4294967296.0f;
+			const float path_b = wang_hash(i * 3 + 2) / 4294967296.0f;
 			glColor3f(path_r, path_g, path_b);
 
 			glLineWidth(2.0f);
@@ -486,47 +493,6 @@ int main(int argc, char ** argv)
 	cam_lookat = 0;
 	lookat_path_idx = 0;
 
-	{
-		std::string line;
-		std::ifstream f("spot_triangulated.obj");
-		if (f.is_open())
-		{
-			while (std::getline(f, line))
-			{
-				// construct a stream from the string
-				std::stringstream strstr(line);
-
-				// use stream iterators to copy the stream to the vector as whitespace separated strings
-				std::istream_iterator<std::string> it(strstr);
-				std::istream_iterator<std::string> end;
-				std::vector<std::string> results(it, end);
-
-				if (it != end)
-				{
-					if (*it == "v")
-					{
-						//for (auto & t : results)
-						//{
-						//	std::cout << t << " ";
-						//}
-						//std::cout << std::endl;
-					}
-					else if (*it == "f")
-					{
-						for (auto & t : results)
-						{
-							std::cout << t << " ";
-						}
-						std::cout << std::endl;
-					}
-				}
-			}
-		}
-
-		std::cout << "deeeeeeeeeeeeeeeerp do the obj loading thing" << std::endl;
-
-		dfgsdgfd
-	}
 
 	start_time = GetTickCount();
 
