@@ -79,7 +79,8 @@ class vec3
 public:
 	real x, y, z;
 
-	inline vec3<real>() {x=0;y=0;z=0; }
+	inline vec3<real>() {}
+
 	inline vec3<real>(const vec3<real> & v) : x(v.x), y(v.y), z(v.z) { }
 	inline vec3<real>(real v) : x(v), y(v), z(v) { }
 	inline vec3<real>(real x_, real y_, real z_) : x(x_), y(y_), z(z_) { }
@@ -197,7 +198,7 @@ public:
 		for (int i = 0; i < num_particles; ++i)
 		{
 			const vec3d & p_i = p_tmp[i];
-			vec3d F_i ;
+			vec3d F_i(0);
 			for (int j = 0; j < num_particles; ++j)
 			{
 				if (j == i) continue;
@@ -233,7 +234,7 @@ public:
 			for (int i = 0; i < num_particles; ++i)
 			{
 				const vec3d p_i = pos[i];
-				vec3d F_i;
+				vec3d F_i(0);
 				for (int j = 0; j < num_particles; ++j)
 				{
 					if (j == i) continue;
@@ -298,7 +299,7 @@ public:
 				for (int i = 0; i < num_particles; ++i)
 				{
 					const vec3d p_i = pos[i];
-					vec3d F_i;
+					vec3d F_i(0);
 					for (int j = 0; j < num_particles; ++j)
 					{
 						if (j == i) continue;
