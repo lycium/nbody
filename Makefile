@@ -1,4 +1,4 @@
-all:nbody
+all: nbody
 
 CFLAGS = -O3 -lpthread -std=c++11
 

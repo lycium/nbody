@@ -246,7 +246,7 @@ public:
 			p_tmp[z] = pos[z] + v_in[z] * dt;
 			v_out[z] = vel[z] + a_in[z] * dt;
 		}
-		
+
 		for (int i = 0; i < num_particles; ++i)
 		{
 			const vec3d & p_i = p_tmp[i];
