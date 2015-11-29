@@ -47,3 +47,7 @@ endif
 
 nbody: nbody.cpp
 	g++ -o $@ $< $(CFLAGS) $(LDFLAGS)
+
+.PHONY: clean
+clean:
+	rm -f nbody
