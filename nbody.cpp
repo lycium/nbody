@@ -4,7 +4,18 @@
 
 #define USE_KAHAN 1
 
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#include <GLUT/glut.h>
+#else
+#ifdef _WIN32
+#include <windows.h>
+#endif
+#include <GL/gl.h>
+#include <GL/glu.h>
 #include <GL/glut.h>
+#endif
 
 #define NOMINMAX
 
@@ -28,6 +39,24 @@
 //Used for storing time as it passes
 struct timespec ts;
 
+#ifdef __MACH__
+#include <mach/mach_time.h>
+#define CLOCK_REALTIME 0
+#define CLOCK_MONOTONIC 0
+int clock_gettime(int clk_id, struct timespec *t){
+	mach_timebase_info_data_t timebase;
+	mach_timebase_info(&timebase);
+	uint64_t time;
+	time = mach_absolute_time();
+	double nseconds = ((double)time * (double)timebase.numer)/((double)timebase.denom);
+	double seconds = ((double)time * (double)timebase.numer)/((double)timebase.denom * 1e9);
+	t->tv_sec = seconds;
+	t->tv_nsec = nseconds;
+	return 0;
+}
+#else
+#include <time.h>
+#endif
 
 #define GET_TICK_COUNT clock_gettime(CLOCK_MONOTONIC, &ts)
 #define SLEEP(ms) usleep(ms)
