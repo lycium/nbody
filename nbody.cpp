@@ -5,9 +5,34 @@
 #define USE_KAHAN 1
 
 #include <GL/glut.h>
-#include <unistd.h>
+
 #define NOMINMAX
+
+//If compiling for Windows
+#if defined(_WIN32)
+//Not sure what this does, but I'm leaving it under Windows
 #define WIN32_LEAN_AND_MEAN
+//Include Windows system libraries
+#include <Windows.h>
+
+//These functions are different for Windows and Linux
+//Use GET_TICK_COUNT anywhere you would normally use GetTickCount
+//Use SLEEP(ms) anywhere you would use SLEEP(ms)
+#define GET_TICK_COUNT  GetTickCount()
+#define SLEEP(ms) Sleep(ms)
+
+//If not compiling for Windows
+#else
+//Include system libraries
+#include <unistd.h>
+//Used for storing time as it passes
+struct timespec ts;
+
+
+#define GET_TICK_COUNT clock_gettime(CLOCK_MONOTONIC, &ts)
+#define SLEEP(ms) usleep(ms)
+
+#endif
 
 #include <random>
 
@@ -79,8 +104,7 @@ class vec3
 public:
 	real x, y, z;
 
-	inline vec3<real>() {}
-
+	inline vec3<real>() { }
 	inline vec3<real>(const vec3<real> & v) : x(v.x), y(v.y), z(v.z) { }
 	inline vec3<real>(real v) : x(v), y(v), z(v) { }
 	inline vec3<real>(real x_, real y_, real z_) : x(x_), y(y_), z(z_) { }
@@ -113,7 +137,6 @@ typedef vec3<double> vec3d;
 
 typedef vec3<float> vec3f; // Used for path storage and simple stuff that doesn't need tons of precision
 
-struct timespec ts;
 
 class nbody
 {
@@ -198,7 +221,7 @@ public:
 		for (int i = 0; i < num_particles; ++i)
 		{
 			const vec3d & p_i = p_tmp[i];
-			vec3d F_i(0);
+			vec3d F_i;
 			for (int j = 0; j < num_particles; ++j)
 			{
 				if (j == i) continue;
@@ -224,7 +247,7 @@ public:
 		{
 			if ((sub_steps % 1024) == 0)
 			{
-				if (reset) { init(clock_gettime(CLOCK_MONOTONIC,&ts) - start_time); reset = false; }
+				if (reset) { init(GET_TICK_COUNT - start_time); reset = false; }
 				else if (quit) { return; }
 			}
 
@@ -234,7 +257,7 @@ public:
 			for (int i = 0; i < num_particles; ++i)
 			{
 				const vec3d p_i = pos[i];
-				vec3d F_i(0);
+				vec3d F_i;
 				for (int j = 0; j < num_particles; ++j)
 				{
 					if (j == i) continue;
@@ -299,7 +322,7 @@ public:
 				for (int i = 0; i < num_particles; ++i)
 				{
 					const vec3d p_i = pos[i];
-					vec3d F_i(0);
+					vec3d F_i;
 					for (int j = 0; j < num_particles; ++j)
 					{
 						if (j == i) continue;
@@ -363,9 +386,9 @@ std::vector<uint32_t> obj_tris;
 
 void renderScene()
 {
-	usleep(16); // Max 62.50fps to avoid spinning on the lock too hard
+	SLEEP(16); // Max 62.50fps to avoid spinning on the lock too hard
 
-	const double t0 = clock_gettime(CLOCK_MONOTONIC,&ts) - start_time;
+	const double t0 = GET_TICK_COUNT - start_time;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -495,7 +518,7 @@ int main(int argc, char ** argv)
 	lookat_path_idx = 0;
 
 
-	start_time = clock_gettime(CLOCK_MONOTONIC,&ts);
+	start_time = GET_TICK_COUNT;
 
 	compute_thread = std::thread(ComputeThread);
 
